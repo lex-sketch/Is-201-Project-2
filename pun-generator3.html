@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pun.me — Pun Generator</title>
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f4f0;
+      color: #1a1a18;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .pun-wrap {
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .pun-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .pun-logo {
+      font-size: 32px;
+      font-weight: 500;
+      color: #1a1a18;
+      letter-spacing: -0.5px;
+    }
+
+    .pun-logo span { color: #D85A30; }
+
+    .pun-tagline {
+      font-size: 14px;
+      color: #888780;
+      margin-top: 4px;
+    }
+
+    .pun-card {
+      background: #ffffff;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+
+    .pun-number {
+      font-size: 12px;
+      color: #b4b2a9;
+      position: absolute;
+      top: 16px;
+      left: 20px;
+    }
+
+    .pun-category-tag {
+      font-size: 11px;
+      color: #b4b2a9;
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pun-text {
+      font-size: 20px;
+      line-height: 1.5;
+      color: #1a1a18;
+      font-weight: 400;
+    }
+
+    .pun-text.loading {
+      color: #b4b2a9;
+      font-size: 15px;
+      font-style: italic;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+
+    .topic-input {
+      flex: 1;
+      min-width: 180px;
+      padding: 0 14px;
+      height: 40px;
+      border-radius: 8px;
+      border: 0.5px solid rgba(0,0,0,0.25);
+      background: #ffffff;
+      color: #1a1a18;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .topic-input::placeholder { color: #b4b2a9; }
+
+    .topic-input:focus {
+      outline: none;
+      border-color: #D85A30;
+    }
+
+    .btn-gen {
+      background: #D85A30;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 20px;
+      height: 40px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+
+    .btn-gen:hover { opacity: 0.88; }
+
+    .categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+
+    .cats-label {
+      font-size: 12px;
+      color: #b4b2a9;
+      margin-right: 2px;
+    }
+
+    .cat-btn {
+      background: #f1efe8;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: #5f5e5a;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s;
+    }
+
+    .cat-btn:hover, .cat-btn.active {
+      background: #FAECE7;
+      border-color: #F0997B;
+      color: #993C1D;
+    }
+
+    .pun-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn-copy {
+      background: transparent;
+      border: 0.5px solid rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 0 14px;
+      height: 36px;
+      font-size: 13px;
+      color: #5f5e5a;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-copy:hover { background: #f1efe8; }
+
+    .copy-feedback {
+      font-size: 12px;
+      color: #3B6D11;
+      display: none;
+    }
+
+    .rating { display: flex; gap: 4px; }
+
+    .star {
+      cursor: pointer;
+      font-size: 18px;
+      color: rgba(0,0,0,0.15);
+      transition: color 0.1s;
+      user-select: none;
+    }
+
+    .star.lit { color: #EF9F27; }
+
+    @media (max-width: 480px) {
+      .pun-text { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="pun-wrap">
+  <div class="pun-header">
+    <div class="pun-logo">pun<span>.me</span></div>
+    <div 
+      class="pun-tagline">Puns on any topic or if you don't like it, you can 
+      <a href="index.html">return to Home</a>
+
+    </div>
+  </div>
+
+  <div class="pun-card">
+    <div class="pun-number" id="pun-num"></div>
+    <div class="pun-category-tag" id="pun-cat"></div>
+    <div class="pun-text loading" id="pun-text">Click "Generate Pun" to get started...</div>
+  </div>
+
+  <div class="controls">
+    <input class="topic-input" type="text" id="topic-input" placeholder="Enter a topic (e.g. cats, coffee, space...)" />
+    <button class="btn-gen" id="gen-btn" onclick="generatePun()">Generate Pun</button>
+  </div>
+
+  <div class="categories" id="cats">
+    <span class="cats-label">Quick:</span>
+  </div>
+
+  <div class="pun-footer">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <button class="btn-copy" id="copy-btn" onclick="copyPun()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+          <rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Copy
+      </button>
+      <span class="copy-feedback" id="copy-ok">Copied!</span>
+    </div>
+    <div class="rating" id="stars"></div>
+  </div>
+</div>
+
+<script>
+  const punDB = {
+    animals: [
+      "I used to hate facial hair, but then it grew on me — just like my cat.",
+      "Why don't elephants use computers? Because they're afraid of the mouse.",
+      "A dog gave birth on the side of the road. She was ticketed for littering.",
+      "What do you call a sleeping dinosaur? A dino-snore.",
+      "I told my dog he was adopted. He said he knew — I throw like a human.",
+      "Why did the cat sit on the computer? To keep an eye on the mouse.",
+      "What do you call a fish without eyes? A fsh.",
+      "Two fish are in a tank. One says: how do we drive this thing?",
+      "Why do cows wear bells? Because their horns don't work.",
+      "What do you call a bear with no teeth? A gummy bear.",
+    ],
+    food: [
+      "I'm on a seafood diet. I see food and I eat it.",
+      "Why did the banana go to the doctor? It wasn't peeling well.",
+      "I tried to write a joke about pizza, but it was too cheesy.",
+      "What do you call a fake noodle? An impasta.",
+      "Why did the tomato turn red? It saw the salad dressing.",
+      "I asked the waiter if my food would be long. He said no, it'll be round.",
+      "Did you hear about the cheese factory explosion? De-brie everywhere.",
+      "Why did the cookie go to the doctor? It was feeling crumby.",
+      "I burnt my Hawaiian pizza today. Should have cooked it on aloha temperature.",
+      "What do you call a sad strawberry? A blueberry.",
+    ],
+    science: [
+      "A neutron walks into a bar and asks how much for a beer. The bartender says: for you, no charge.",
+      "I would tell a chemistry joke, but I know I wouldn't get a reaction.",
+      "Why can't you trust an atom? They make up everything.",
+      "Did you hear oxygen went on a date with potassium? It went OK.",
+      "A photon checks into a hotel. The bellhop asks if he has any luggage. He says: no, I'm traveling light.",
+      "Why did the physics teacher break up with the biology teacher? There was no chemistry.",
+      "I tried to make a DNA joke, but the humor was genetic.",
+      "What did the thermometer say to the graduated cylinder? You may have graduated but I've got more degrees.",
+      "Helium walks into a bar. The bartender says we don't serve noble gases here. Helium doesn't react.",
+      "Why do biologists look forward to casual Fridays? They can wear genes to work.",
+    ],
+    music: [
+      "Why did the musician get arrested? He got caught fingering A minor.",
+      "What's a golfer's favorite music? Swing.",
+      "Why did Mozart get rid of all his chickens? They kept saying Bach Bach Bach.",
+      "I tried to come up with a joke about jazz, but it got too improv-isational.",
+      "What do you call a guitar player without a girlfriend? Homeless.",
+      "Why couldn't the string quartet find their composer? Because he was Haydn.",
+      "What's Beethoven's favorite fruit? Ba-na-na-naaa.",
+      "I'm reading a book about anti-gravity music. It's impossible to put down.",
+      "Why did the pianist keep banging his head on the keyboard? He was playing by ear.",
+      "What rock band has four guys who don't play instruments? Mount Rushmore.",
+    ],
+    sports: [
+      "I used to be a banker, but I lost interest. Now I play golf — I'm still losing interest.",
+      "Why are basketball courts so slippery? Because the players dribble.",
+      "A horse walked into a sports bar. The bartender said: why the long face?",
+      "Why can't Cinderella play soccer? She keeps running away from the ball.",
+      "What's a boxer's favorite drink? Punch.",
+      "Why did the golfer bring an extra pair of pants? In case he got a hole in one.",
+      "I asked a tennis player what his favorite city was. He said: it's a tie between Volley-wood and Serve-ille.",
+      "Why are football stadiums so windy? Because of all the fans.",
+      "What do you call a boomerang that doesn't come back? A stick.",
+      "Why did the scarecrow win an award? Because he was outstanding in his field.",
+    ],
+    weather: [
+      "It was raining cats and dogs last night. I almost stepped in a poodle.",
+      "Why did the weather report go to school? To become a little brighter.",
+      "I love storms. They really make me thunder-stand life.",
+      "What did the hurricane say to the coconut tree? Hold on to your nuts, this is no ordinary blowjob.",
+      "Why don't scientists trust atoms during a storm? Because they make up lightning.",
+      "What do clouds do when they get rich? They make it rain.",
+      "Why is thunder so good at poker? It always folds when lightning strikes.",
+      "I tried to catch some fog earlier. I mist.",
+      "What season is it when you're on a trampoline? Spring.",
+      "Why does lightning shock people? Because it doesn't know how to conduct itself.",
+    ],
+    tech: [
+      "Why do programmers prefer dark mode? Because light attracts bugs.",
+      "A SQL query walks into a bar, walks up to two tables and asks: can I join you?",
+      "Why did the developer go broke? Because he used up all his cache.",
+      "I told a joke about Wi-Fi once. It had great range.",
+      "Why do Java developers wear glasses? Because they don't C#.",
+      "What's a computer's favorite snack? Microchips.",
+      "Why was the computer cold? It left its Windows open.",
+      "How do you comfort a JavaScript bug? You console it.",
+      "Why did the programmer quit his job? Because he didn't get arrays.",
+      "What do you call 8 hobbits? A hobbyte.",
+    ],
+    "dad joke": [
+      "I'm afraid for the calendar. Its days are numbered.",
+      "Why can't you give Elsa a balloon? Because she'll let it go.",
+      "I used to hate facial hair, but then it grew on me.",
+      "I ordered a chicken and an egg from Amazon. I'll let you know.",
+      "Did you hear about the guy who invented Lifesavers? He made a mint.",
+      "I only know 25 letters of the alphabet. I don't know y.",
+      "What do you call a factory that makes okay products? A satisfactory.",
+      "Why did the scarecrow win an award? He was outstanding in his field.",
+      "What did the ocean say to the beach? Nothing, it just waved.",
+      "I'm reading a book about anti-gravity. It's impossible to put down.",
+    ],
+  };
+
+  const allPuns = Object.entries(punDB).flatMap(([cat, puns]) =>
+    puns.map(p => ({ cat, text: p }))
+  );
+
+  const categories = Object.keys(punDB);
+  const catsEl = document.getElementById("cats");
+  const starsEl = document.getElementById("stars");
+  let punCount = 0;
+  let currentPun = "";
+  let lastIndex = -1;
+
+  categories.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "cat-btn";
+    b.textContent = c;
+    b.onclick = () => {
+      document.querySelectorAll(".cat-btn").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      document.getElementById("topic-input").value = c;
+      generatePun();
+    };
+    catsEl.appendChild(b);
+  });
+
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement("span");
+    s.className = "star";
+    s.textContent = "★";
+    s.dataset.val = i;
+    s.onmouseover = () => highlightStars(i);
+    s.onmouseout = () => highlightStars(0);
+    s.onclick = () => highlightStars(i, true);
+    starsEl.appendChild(s);
+  }
+
+  function highlightStars(n) {
+    document.querySelectorAll(".star").forEach(s => {
+      s.classList.toggle("lit", parseInt(s.dataset.val) <= n);
+    });
+  }
+
+  function generatePun() {
+    const topic = document.getElementById("topic-input").value.trim().toLowerCase();
+    const textEl = document.getElementById("pun-text");
+    const numEl = document.getElementById("pun-num");
+    const catEl = document.getElementById("pun-cat");
+
+    highlightStars(0);
+
+    // Find matching category or search all
+    let pool;
+    const matchedCat = categories.find(c => topic === c || topic.includes(c) || c.includes(topic));
+
+    if (matchedCat) {
+      pool = punDB[matchedCat].map(p => ({ cat: matchedCat, text: p }));
+    } else if (topic === "") {
+      pool = allPuns;
+    } else {
+      // Try loose keyword match across all puns
+      pool = allPuns.filter(p => p.text.toLowerCase().includes(topic));
+      if (pool.length === 0) pool = allPuns; // fallback to all
+    }
+
+    // Pick a random pun, avoiding immediate repeat
+    let idx;
+    do {
+      idx = Math.floor(Math.random() * pool.length);
+    } while (pool.length > 1 && idx === lastIndex);
+    lastIndex = idx;
+
+    const chosen = pool[idx];
+    punCount++;
+    currentPun = chosen.text;
+
+    textEl.className = "pun-text";
+    textEl.textContent = chosen.text;
+    numEl.textContent = "Pun #" + punCount;
+    catEl.textContent = chosen.cat;
+  }
+
+  function copyPun() {
+    if (!currentPun) return;
+    navigator.clipboard.writeText(currentPun).then(() => {
+      const fb = document.getElementById("copy-ok");
+      fb.style.display = "inline";
+      setTimeout(() => fb.style.display = "none", 1800);
+    });
+  }
+
+  document.getElementById("topic-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") generatePun();
+  });
+</script>
+
+</body>
+</html>
